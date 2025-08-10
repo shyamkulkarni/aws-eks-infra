@@ -42,7 +42,7 @@ variable "ng_on_demand_max" {
 }
 variable "ng_on_demand_desired" {
   type    = number
-  default = 2
+  default = 10
 }
 
 variable "ng_spot_enabled" {
