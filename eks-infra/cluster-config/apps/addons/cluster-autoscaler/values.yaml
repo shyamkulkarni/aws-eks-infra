@@ -1,0 +1,7 @@
+autoDiscovery:
+  clusterName: my-eks-cluster
+awsRegion: us-east-1
+rbac:
+  serviceAccount:
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::<ACCOUNT_ID>:role/cluster-autoscaler-irsa

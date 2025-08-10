@@ -1,0 +1,8 @@
+clusterName: my-eks-cluster
+serviceAccount:
+  create: false
+  name: aws-load-balancer-controller
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::<ACCOUNT_ID>:role/aws-lb-controller-irsa
+region: us-east-1
+vpcId: vpc-xxxxxxxx

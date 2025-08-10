@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd-bootstrap
+  namespace: argocd            # This namespace must exist first (argo-namespace.yaml)
+spec:
+  project: default
+  source:
+    repoURL: https://argoproj.github.io/argo-helm   # Official Argo CD Helm chart repo
+    chart: argo-cd                                  # Chart name
+    targetRevision: 6.7.10                          # Helm chart version (not Argo CD app version)
+    helm:
+      valueFiles:
+        - argo/values.yaml                          # Path in your Git repo to Helm values file
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true                                   # Remove resources not in Git
+      selfHeal: true                                # Fix drift automatically
+    syncOptions:
+      - CreateNamespace=true                        # Create namespace if missing

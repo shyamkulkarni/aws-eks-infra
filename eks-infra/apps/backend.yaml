@@ -1,0 +1,102 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: shop
+data:
+  DATABASE_URL: "postgresql://postgres:postgrespw@shop-postgres-postgresql.shop.svc.cluster.local:5432/postgres"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: shop
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+      - name: api
+        image: ghcr.io/tiangolo/uvicorn-gunicorn-fastapi:python3.9
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: DATABASE_URL
+        ports:
+        - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 15
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        volumeMounts:
+        - name: app
+          mountPath: /app
+      volumes:
+      - name: app
+        projected:
+          sources:
+          - configMap:
+              name: api-code
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-code
+  namespace: shop
+data:
+  main.py: |
+    from fastapi import FastAPI
+    import os, psycopg2
+
+    app = FastAPI()
+
+    @app.get("/healthz")
+    def health():
+        return {"ok": True}
+
+    @app.get("/items")
+    def items():
+        url = os.environ.get("DATABASE_URL")
+        with psycopg2.connect(url) as conn:
+            with conn.cursor() as cur:
+                cur.execute("CREATE TABLE IF NOT EXISTS items(id serial primary key, name text);")
+                cur.execute("INSERT INTO items(name) VALUES('apple') ON CONFLICT DO NOTHING;")
+                cur.execute("SELECT id, name FROM items LIMIT 10;")
+                return [{"id": r[0], "name": r[1]} for r in cur.fetchall()]
+
+    if __name__ == "__main__":
+        import uvicorn
+        uvicorn.run("main:app", host="0.0.0.0", port=80)
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  namespace: shop
+spec:
+  selector:
+    app: api
+  ports:
+  - port: 80
+    targetPort: 80
