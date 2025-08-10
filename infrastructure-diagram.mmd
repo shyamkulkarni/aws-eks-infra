@@ -1,0 +1,22 @@
+flowchart LR
+  subgraph AWS["Amazon Web Services - us-east-1"]
+    subgraph VPC["VPC 10.0.0.0/16"]
+      direction LR
+      subgraph Pub["Public Subnets AZ-a/b/c"]
+        IGW["Internet Gateway"]
+        ALB["ALB"]
+      end
+      subgraph Pri["Private Subnets AZ-a/b/c"]
+        EKS["EKS Control Plane (HA)"]
+        N1["Managed Node Group - On-Demand"]
+        N2["Managed Node Group - Spot (optional)"]
+        NS["Core Add-ons: Argo CD, ALB Controller, ExternalDNS, cert-manager, Metrics Server, Prometheus, Grafana, Fluent Bit"]
+        APP["Your Apps (Deploy via Argo CD)"]
+      end
+      NAT["NAT Gateways"]
+      R53["Route 53 Hosted Zone"]
+    end
+    CW["CloudWatch Logs & Metrics"]
+    SM["Secrets Manager"]
+    ACM["ACM Certificates"]
+  end
