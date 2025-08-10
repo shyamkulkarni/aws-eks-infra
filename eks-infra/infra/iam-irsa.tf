@@ -11,11 +11,11 @@ data "aws_region" "current" {}
 # Generic IRSA role creator
 resource "aws_iam_role" "irsa_role" {
   for_each = {
-    externaldns = {
-      sa   = "external-dns"
-      ns   = local.ns_system
-      policy = data.aws_iam_policy_document.externaldns.json
-    }
+    # externaldns = {
+    #   sa   = "external-dns"
+    #   ns   = local.ns_system
+    #   policy = data.aws_iam_policy_document.externaldns.json
+    # }
     alb = {
       sa   = "aws-load-balancer-controller"
       ns   = local.ns_system
@@ -40,7 +40,7 @@ resource "aws_iam_role" "irsa_role" {
 
 data "aws_iam_policy_document" "irsa_assume" {
   for_each = {
-    externaldns = {}
+    # externaldns = {}
     alb = {}
     fluentbit = {}
     clusterautoscaler = {}
@@ -54,7 +54,7 @@ data "aws_iam_policy_document" "irsa_assume" {
     condition {
       test     = "StringEquals"
       variable = "${local.oidc_provider_url}:sub"
-      values   = ["system:serviceaccount:${lookup({externaldns=local.ns_system, alb=local.ns_system, fluentbit=local.ns_system, clusterautoscaler=local.ns_system}, each.key)}:${lookup({externaldns="external-dns", alb="aws-load-balancer-controller", fluentbit="fluent-bit", clusterautoscaler="cluster-autoscaler"}, each.key)}"]
+      values   = ["system:serviceaccount:${lookup({alb=local.ns_system, fluentbit=local.ns_system, clusterautoscaler=local.ns_system}, each.key)}:${lookup({alb="aws-load-balancer-controller", fluentbit="fluent-bit", clusterautoscaler="cluster-autoscaler"}, each.key)}"]
     }
     condition {
       test     = "StringEquals"
@@ -66,7 +66,7 @@ data "aws_iam_policy_document" "irsa_assume" {
 
 resource "aws_iam_policy" "irsa_policy" {
   for_each = {
-    externaldns = data.aws_iam_policy_document.externaldns.json
+    # externaldns = data.aws_iam_policy_document.externaldns.json
     alb         = data.aws_iam_policy_document.alb.json
     fluentbit   = data.aws_iam_policy_document.fluentbit.json
     clusterautoscaler = data.aws_iam_policy_document.clusterautoscaler.json
@@ -81,26 +81,51 @@ resource "aws_iam_role_policy_attachment" "attach" {
   policy_arn = aws_iam_policy.irsa_policy[each.key].arn
 }
 
-data "aws_route53_zone" "primary" {
-  name         = var.domain_name
-  private_zone = false
-}
-data "aws_iam_policy_document" "externaldns" {
-  statement {
-    actions = [
-      "route53:ChangeResourceRecordSets"
-    ]
-    resources = [data.aws_route53_zone.primary.arn]
-  }
-  statement {
-    actions   = ["route53:ListHostedZones","route53:ListResourceRecordSets","route53:ListHostedZonesByName"]
-    resources = ["*"]
-  }
-}
+# Commented out until you have a Route53 hosted zone
+# data "aws_route53_zone" "primary" {
+#   name         = var.domain_name
+#   private_zone = false
+# }
+# data "aws_iam_policy_document" "externaldns" {
+#   statement {
+#     actions = [
+#       "route53:ChangeResourceRecordSets"
+#     ]
+#     resources = [data.aws_route53_zone.primary.arn]
+#   }
+#   statement {
+#     actions   = ["route53:ListHostedZones","route53:ListResourceRecordSets","route53:ListHostedZonesByName"]
+#     resources = ["*"]
+#   }
+# }
 
 
 data "aws_iam_policy_document" "alb" {
-  statement { actions = ["elasticloadbalancing:*","ec2:Describe*","ec2:Get*","iam:CreateServiceLinkedRole","cognito-idp:DescribeUserPoolClient","waf-regional:GetWebACLForResource","waf-regional:GetWebACL","waf-regional:AssociateWebACL","waf-regional:DisassociateWebACL","wafv2:GetWebACLForResource","wafv2:GetWebACL","wafv2:AssociateWebACL","wafv2:DisassociateWebACL","tag:GetResources","tag:TagResources","shield:DescribeSubscription","shield:GetSubscriptionState","shield:CreateProtection","shield:DeleteProtection","shield:DescribeProtection"], resources=["*"] }
+  statement {
+    actions = [
+      "elasticloadbalancing:*",
+      "ec2:Describe*",
+      "ec2:Get*",
+      "iam:CreateServiceLinkedRole",
+      "cognito-idp:DescribeUserPoolClient",
+      "waf-regional:GetWebACLForResource",
+      "waf-regional:GetWebACL",
+      "waf-regional:AssociateWebACL",
+      "waf-regional:DisassociateWebACL",
+      "wafv2:GetWebACLForResource",
+      "wafv2:GetWebACL",
+      "wafv2:AssociateWebACL",
+      "wafv2:DisassociateWebACL",
+      "tag:GetResources",
+      "tag:TagResources",
+      "shield:DescribeSubscription",
+      "shield:GetSubscriptionState",
+      "shield:CreateProtection",
+      "shield:DeleteProtection",
+      "shield:DescribeProtection"
+    ]
+    resources = ["*"]
+  }
 }
 
 

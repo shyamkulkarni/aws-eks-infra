@@ -6,7 +6,10 @@ resource "aws_iam_role" "eks_cluster" {
 data "aws_iam_policy_document" "eks_assume_role" {
   statement {
     actions = ["sts:AssumeRole"]
-    principals { type = "Service" identifiers = ["eks.amazonaws.com"] }
+    principals {
+      type        = "Service"
+      identifiers = ["eks.amazonaws.com"]
+    }
   }
 }
 resource "aws_iam_role_policy_attachment" "eks_service" {
@@ -22,7 +25,10 @@ resource "aws_iam_role" "eks_node" {
 data "aws_iam_policy_document" "ec2_assume_role" {
   statement {
     actions = ["sts:AssumeRole"]
-    principals { type = "Service" identifiers = ["ec2.amazonaws.com"] }
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
   }
 }
 resource "aws_iam_role_policy_attachment" "worker_node" {
@@ -76,12 +82,6 @@ resource "aws_eks_node_group" "on_demand" {
 
   capacity_type = "ON_DEMAND"
   tags          = var.tags
-  
-  # Add security group
-  remote_access {
-    ec2_ssh_key = null
-    source_security_group_ids = [aws_security_group.eks_nodes.id]
-  }
 }
 
 resource "aws_eks_node_group" "spot" {
@@ -101,12 +101,6 @@ resource "aws_eks_node_group" "spot" {
   instance_types = var.instance_types_spot
   capacity_type  = "SPOT"
   tags           = var.tags
-  
-  # Add security group
-  remote_access {
-    ec2_ssh_key = null
-    source_security_group_ids = [aws_security_group.eks_nodes.id]
-  }
 }
 
 # OIDC provider for IRSA

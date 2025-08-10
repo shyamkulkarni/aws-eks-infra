@@ -38,12 +38,14 @@ spec:
           httpGet:
             path: /healthz
             port: 80
-          initialDelaySeconds: 5
+          initialDelaySeconds: 30
+          periodSeconds: 10
         livenessProbe:
           httpGet:
             path: /healthz
             port: 80
-          initialDelaySeconds: 15
+          initialDelaySeconds: 45
+          periodSeconds: 10
         resources:
           requests:
             cpu: "100m"
@@ -70,8 +72,23 @@ data:
   main.py: |
     from fastapi import FastAPI
     import os, psycopg2
+    import time
 
     app = FastAPI()
+
+    def get_db_connection():
+        url = os.environ.get("DATABASE_URL")
+        max_retries = 5
+        for i in range(max_retries):
+            try:
+                conn = psycopg2.connect(url)
+                return conn
+            except psycopg2.OperationalError as e:
+                if i < max_retries - 1:
+                    print(f"Database connection failed, retrying in 2 seconds... ({i+1}/{max_retries})")
+                    time.sleep(2)
+                else:
+                    raise e
 
     @app.get("/healthz")
     def health():
@@ -79,11 +96,13 @@ data:
 
     @app.get("/items")
     def items():
-        url = os.environ.get("DATABASE_URL")
-        with psycopg2.connect(url) as conn:
+        with get_db_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("CREATE TABLE IF NOT EXISTS items(id serial primary key, name text);")
                 cur.execute("INSERT INTO items(name) VALUES('apple') ON CONFLICT DO NOTHING;")
+                cur.execute("INSERT INTO items(name) VALUES('banana') ON CONFLICT DO NOTHING;")
+                cur.execute("INSERT INTO items(name) VALUES('orange') ON CONFLICT DO NOTHING;")
+                conn.commit()
                 cur.execute("SELECT id, name FROM items LIMIT 10;")
                 return [{"id": r[0], "name": r[1]} for r in cur.fetchall()]
 

@@ -16,7 +16,7 @@ resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.this.id
   cidr_block              = each.value
   map_public_ip_on_launch = true
-  availability_zone       = data.aws_availability_zones.available.names[index(keys(aws_subnet.public), each.key)]
+  availability_zone       = data.aws_availability_zones.available.names[index(var.public_subnet_cidrs, each.value)]
   tags = merge(var.tags, {
     Name                                         = "${var.project_name}-public-${each.key}"
     "kubernetes.io/role/elb"                     = "1"
@@ -24,18 +24,16 @@ resource "aws_subnet" "public" {
   })
 }
 
-# NAT per AZ for resilience (you may switch to 1 NAT to save cost)
+# Single NAT gateway to avoid EIP limit and save cost
 resource "aws_eip" "nat" {
-  for_each = aws_subnet.public
-  domain   = "vpc"
-  tags     = merge(var.tags, { Name = "${var.project_name}-nat-eip-${each.key}" })
+  domain = "vpc"
+  tags   = merge(var.tags, { Name = "${var.project_name}-nat-eip" })
 }
 
 resource "aws_nat_gateway" "this" {
-  for_each      = aws_subnet.public
-  allocation_id = aws_eip.nat[each.key].id
-  subnet_id     = aws_subnet.public[each.key].id
-  tags          = merge(var.tags, { Name = "${var.project_name}-nat-${each.key}" })
+  allocation_id = aws_eip.nat.id
+  subnet_id     = values(aws_subnet.public)[0].id
+  tags          = merge(var.tags, { Name = "${var.project_name}-nat" })
 }
 
 # Private subnets
@@ -43,7 +41,7 @@ resource "aws_subnet" "private" {
   for_each          = toset(slice(var.private_subnet_cidrs, 0, var.az_count))
   vpc_id            = aws_vpc.this.id
   cidr_block        = each.value
-  availability_zone = data.aws_availability_zones.available.names[index(keys(aws_subnet.private), each.key)]
+  availability_zone = data.aws_availability_zones.available.names[index(var.private_subnet_cidrs, each.value)]
   tags = merge(var.tags, {
     Name                                         = "${var.project_name}-private-${each.key}"
     "kubernetes.io/role/internal-elb"            = "1"
@@ -68,20 +66,18 @@ resource "aws_route_table_association" "public_assoc" {
 }
 
 resource "aws_route_table" "private" {
-  for_each = aws_nat_gateway.this
-  vpc_id   = aws_vpc.this.id
-  tags     = merge(var.tags, { Name = "${var.project_name}-rt-private-${each.key}" })
+  vpc_id = aws_vpc.this.id
+  tags   = merge(var.tags, { Name = "${var.project_name}-rt-private" })
 }
 resource "aws_route" "private_nat" {
-  for_each               = aws_route_table.private
-  route_table_id         = each.value.id
-  nat_gateway_id         = aws_nat_gateway.this[each.key].id
+  route_table_id         = aws_route_table.private.id
+  nat_gateway_id         = aws_nat_gateway.this.id
   destination_cidr_block = "0.0.0.0/0"
 }
 resource "aws_route_table_association" "private_assoc" {
   for_each       = aws_subnet.private
   subnet_id      = each.value.id
-  route_table_id = aws_route_table.private[each.key].id
+  route_table_id = aws_route_table.private.id
 }
 
 data "aws_availability_zones" "available" {}

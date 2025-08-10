@@ -16,9 +16,14 @@ data:
       <pre id="out"></pre>
       <script>
         async function load(){
-          const res = await fetch('/api/items');
-          document.getElementById('out').textContent =
-            JSON.stringify(await res.json(), null, 2);
+          try {
+            const res = await fetch('/api/items');
+            const data = await res.json();
+            document.getElementById('out').textContent =
+              JSON.stringify(data, null, 2);
+          } catch (error) {
+            document.getElementById('out').textContent = 'Error: ' + error.message;
+          }
         }
       </script>
     </body>
@@ -47,10 +52,15 @@ spec:
         volumeMounts:
         - name: web-content
           mountPath: /usr/share/nginx/html
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d
       volumes:
       - name: web-content
         configMap:
           name: web-content
+      - name: nginx-config
+        configMap:
+          name: nginx-config
 ---
 apiVersion: v1
 kind: Service
