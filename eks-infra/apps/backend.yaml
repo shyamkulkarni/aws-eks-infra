@@ -23,7 +23,9 @@ spec:
     spec:
       containers:
       - name: api
-        image: ghcr.io/tiangolo/uvicorn-gunicorn-fastapi:python3.9
+        image: python:3.9-slim
+        command: ["/bin/sh"]
+        args: ["-c", "pip install fastapi uvicorn psycopg2-binary && cd /app && python main.py"]
         env:
         - name: DATABASE_URL
           valueFrom:
