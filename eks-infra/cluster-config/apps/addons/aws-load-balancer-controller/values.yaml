@@ -3,6 +3,6 @@ serviceAccount:
   create: false
   name: aws-load-balancer-controller
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID_PLACEHOLDER:role/eks-gitops-irsa-alb
+    eks.amazonaws.com/role-arn: arn:aws:iam::466162272783:role/eks-gitops-irsa-alb
 region: us-east-1
-vpcId: VPC_ID_PLACEHOLDER
+vpcId: vpc-06c45759f34f09141

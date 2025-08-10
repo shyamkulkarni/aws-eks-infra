@@ -38,7 +38,7 @@ variable "ng_on_demand_min" {
 }
 variable "ng_on_demand_max" {
   type    = number
-  default = 4
+  default = 15
 }
 variable "ng_on_demand_desired" {
   type    = number

@@ -8,4 +8,4 @@ interval: 1m
 serviceAccount:
   create: true
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID_PLACEHOLDER:role/eks-gitops-irsa-externaldns
+    eks.amazonaws.com/role-arn: arn:aws:iam::466162272783:role/eks-gitops-irsa-externaldns
