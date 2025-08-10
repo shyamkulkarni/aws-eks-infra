@@ -1,7 +1,7 @@
 autoDiscovery:
-  clusterName: my-cluster
+  clusterName: eks-gitops
 awsRegion: us-east-1
 rbac:
   serviceAccount:
     annotations:
-      eks.amazonaws.com/role-arn: arn:aws:iam::466162272783:role/my-cluster-irsa-clusterautoscaler
+      eks.amazonaws.com/role-arn: arn:aws:iam::466162272783:role/eks-gitops-irsa-clusterautoscaler
