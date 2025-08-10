@@ -55,39 +55,97 @@ flowchart LR
    cd aws-eks-infra
    ```
 
-2. **Configure variables**
+2. **Configure variables (optional)**
    ```bash
    cd infra
-   # Edit terraform.tfvars with your values
+   # Edit terraform.tfvars if you want to customize defaults
+   cd ..
    ```
 
-3. **Deploy infrastructure**
+3. **Deploy infrastructure and Argo CD**
    ```bash
+   # Use the bootstrap script for complete deployment
+   ./bootstrap.sh
+   
+   # Or deploy manually:
+   cd infra
    terraform init
    terraform plan
    terraform apply
+   cd ..
+   
+   # Update placeholder values
+   ./update-placeholders.sh
+   
+   # Deploy Argo CD
+   kubectl apply -f cluster-config/argo/argo-namespace.yaml
+   kubectl apply -f cluster-config/argo/values.yaml
+   kubectl apply -f cluster-config/apps/app-of-apps.yaml
    ```
 
-4. **Configure kubectl**
+4. **Access Argo CD**
    ```bash
-   aws eks update-kubeconfig --region us-east-1 --name your-cluster-name
+   # Get admin password
+   kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+   
+   # Port forward to access UI locally
+   kubectl port-forward svc/argocd-server -n argocd 8080:443
+   # Then visit: https://localhost:8080 (username: admin)
    ```
 
 ## Directory Structure
 
 ```
-infra/
-├── main.tf              # Main Terraform configuration
-├── vpc.tf               # VPC and networking resources
-├── eks.tf               # EKS cluster configuration
-├── iam-irsa.tf          # IAM roles for service accounts
-├── variables.tf         # Variable definitions
-├── terraform.tfvars     # Variable values
-├── versions.tf          # Terraform and provider versions
-├── providers.tf         # AWS provider configuration
-├── outputs.tf           # Output values
-└── locals.tf            # Local variable definitions
+infra/                           # Terraform infrastructure code
+├── main.tf                      # Main Terraform configuration
+├── vpc.tf                       # VPC, subnets, security groups
+├── eks.tf                       # EKS cluster and node groups
+├── iam-irsa.tf                  # IAM roles for service accounts
+├── variables.tf                 # Variable definitions with validation
+├── terraform.tfvars             # Variable values
+├── versions.tf                  # Terraform and provider versions
+├── providers.tf                 # AWS provider configuration
+├── outputs.tf                   # Output values
+└── locals.tf                    # Local variable definitions
+
+cluster-config/                   # Argo CD application configurations
+├── apps/                        # Application definitions
+│   ├── app-of-apps.yaml        # Root application for add-ons
+│   └── addons/                 # Kubernetes add-ons
+│       ├── aws-load-balancer-controller/
+│       ├── cert-manager/
+│       ├── cluster-autoscaler/
+│       ├── external-dns/
+│       ├── fluent-bit/
+│       ├── kube-prometheus-stack/
+│       └── metrics-server/
+├── argo/                        # Argo CD configuration
+└── platform/                    # Platform namespaces
+
+apps/                            # Application manifests
+├── backend.yaml                 # Backend application
+├── frontend.yaml                # Frontend application
+├── ingress.yaml                 # Ingress configuration
+└── namespaces-and-networkpolicy.yaml
+
+bootstrap.sh                     # Complete deployment script
+update-placeholders.sh           # Post-deployment value updater
 ```
+
+## Production Checklist
+
+Before deploying to production, ensure you have:
+
+- [ ] **Security Groups**: Properly configured and restrictive
+- [ ] **IAM Policies**: Least privilege access configured
+- [ ] **Network Policies**: Pod-to-pod communication restricted
+- [ ] **Secrets Management**: No hardcoded credentials
+- [ ] **Monitoring**: Prometheus and Grafana configured
+- [ ] **Logging**: Centralized logging with retention policies
+- [ ] **Backup Strategy**: EBS snapshots and cluster backups
+- [ ] **Disaster Recovery**: Multi-region or backup cluster plan
+- [ ] **Cost Optimization**: Spot instances and savings plans
+- [ ] **Compliance**: Meet your organization's security requirements
 
 ## Contributing
 

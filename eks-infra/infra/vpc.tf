@@ -85,3 +85,50 @@ resource "aws_route_table_association" "private_assoc" {
 }
 
 data "aws_availability_zones" "available" {}
+
+# Security Groups
+resource "aws_security_group" "eks_cluster" {
+  name_prefix = "${var.project_name}-eks-cluster-"
+  vpc_id      = aws_vpc.this.id
+  description = "Security group for EKS cluster control plane"
+  
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
+  tags = merge(var.tags, { Name = "${var.project_name}-eks-cluster-sg" })
+}
+
+resource "aws_security_group" "eks_nodes" {
+  name_prefix = "${var.project_name}-eks-nodes-"
+  vpc_id      = aws_vpc.this.id
+  description = "Security group for EKS worker nodes"
+  
+  ingress {
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = [aws_security_group.eks_cluster.id]
+    description     = "Allow cluster control plane to communicate with worker nodes"
+  }
+  
+  ingress {
+    from_port       = 10250
+    to_port         = 10250
+    protocol        = "tcp"
+    security_groups = [aws_security_group.eks_cluster.id]
+    description     = "Allow cluster control plane to communicate with worker nodes (kubelet)"
+  }
+  
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
+  tags = merge(var.tags, { Name = "${var.project_name}-eks-nodes-sg" })
+}

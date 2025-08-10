@@ -4,6 +4,10 @@ locals {
   ns_system         = "kube-system"
 }
 
+# AWS data sources for dynamic values
+data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
+
 # Generic IRSA role creator
 resource "aws_iam_role" "irsa_role" {
   for_each = {
@@ -22,6 +26,11 @@ resource "aws_iam_role" "irsa_role" {
       ns   = local.ns_system
       policy = data.aws_iam_policy_document.fluentbit.json
     }
+    clusterautoscaler = {
+      sa   = "cluster-autoscaler"
+      ns   = local.ns_system
+      policy = data.aws_iam_policy_document.clusterautoscaler.json
+    }
   }
 
   name               = "${var.project_name}-irsa-${each.key}"
@@ -34,6 +43,7 @@ data "aws_iam_policy_document" "irsa_assume" {
     externaldns = {}
     alb = {}
     fluentbit = {}
+    clusterautoscaler = {}
   }
   statement {
     actions = ["sts:AssumeRoleWithWebIdentity"]
@@ -44,7 +54,7 @@ data "aws_iam_policy_document" "irsa_assume" {
     condition {
       test     = "StringEquals"
       variable = "${local.oidc_provider_url}:sub"
-      values   = ["system:serviceaccount:${lookup({externaldns=local.ns_system, alb=local.ns_system, fluentbit=local.ns_system}, each.key)}:${lookup({externaldns="external-dns", alb="aws-load-balancer-controller", fluentbit="fluent-bit"}, each.key)}"]
+      values   = ["system:serviceaccount:${lookup({externaldns=local.ns_system, alb=local.ns_system, fluentbit=local.ns_system, clusterautoscaler=local.ns_system}, each.key)}:${lookup({externaldns="external-dns", alb="aws-load-balancer-controller", fluentbit="fluent-bit", clusterautoscaler="cluster-autoscaler"}, each.key)}"]
     }
     condition {
       test     = "StringEquals"
@@ -59,6 +69,7 @@ resource "aws_iam_policy" "irsa_policy" {
     externaldns = data.aws_iam_policy_document.externaldns.json
     alb         = data.aws_iam_policy_document.alb.json
     fluentbit   = data.aws_iam_policy_document.fluentbit.json
+    clusterautoscaler = data.aws_iam_policy_document.clusterautoscaler.json
   }
   name   = "${var.project_name}-${each.key}-policy"
   policy = each.value
@@ -97,6 +108,21 @@ data "aws_iam_policy_document" "alb" {
 data "aws_iam_policy_document" "fluentbit" {
   statement {
     actions = ["logs:CreateLogGroup","logs:CreateLogStream","logs:PutLogEvents","logs:DescribeLogStreams","logs:PutRetentionPolicy"]
+    resources = ["*"]
+  }
+}
+
+data "aws_iam_policy_document" "clusterautoscaler" {
+  statement {
+    actions = [
+      "autoscaling:DescribeAutoScalingGroups",
+      "autoscaling:DescribeAutoScalingInstances",
+      "autoscaling:DescribeLaunchConfigurations",
+      "autoscaling:DescribeTags",
+      "autoscaling:SetDesiredCapacity",
+      "autoscaling:TerminateInstanceInAutoScalingGroup",
+      "ec2:DescribeLaunchTemplateVersions"
+    ]
     resources = ["*"]
   }
 }

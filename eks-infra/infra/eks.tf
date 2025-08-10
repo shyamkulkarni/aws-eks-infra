@@ -48,12 +48,14 @@ resource "aws_eks_cluster" "this" {
     endpoint_public_access  = true
     public_access_cidrs     = ["0.0.0.0/0"] # tighten later
     subnet_ids              = concat(values(aws_subnet.public)[*].id, values(aws_subnet.private)[*].id)
+    security_group_ids      = [aws_security_group.eks_cluster.id]
   }
 
   tags = var.tags
 
   depends_on = [
-    aws_iam_role_policy_attachment.eks_service
+    aws_iam_role_policy_attachment.eks_service,
+    aws_security_group.eks_cluster
   ]
 }
 
@@ -74,6 +76,12 @@ resource "aws_eks_node_group" "on_demand" {
 
   capacity_type = "ON_DEMAND"
   tags          = var.tags
+  
+  # Add security group
+  remote_access {
+    ec2_ssh_key = null
+    source_security_group_ids = [aws_security_group.eks_nodes.id]
+  }
 }
 
 resource "aws_eks_node_group" "spot" {
@@ -93,6 +101,12 @@ resource "aws_eks_node_group" "spot" {
   instance_types = var.instance_types_spot
   capacity_type  = "SPOT"
   tags           = var.tags
+  
+  # Add security group
+  remote_access {
+    ec2_ssh_key = null
+    source_security_group_ids = [aws_security_group.eks_nodes.id]
+  }
 }
 
 # OIDC provider for IRSA

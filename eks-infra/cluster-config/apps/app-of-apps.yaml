@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/<YOU>/<YOUR_CLUSTER_CONFIG_REPO>.git
+    repoURL: https://github.com/shyamkulkarni/aws-eks-infra.git
     targetRevision: main
     path: cluster-config/apps/addons
     directory:

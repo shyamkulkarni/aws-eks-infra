@@ -1,4 +1,12 @@
-variable "project_name" { type = string  default = "eks-gitops" }
+variable "project_name" { 
+  type        = string  
+  default     = "eks-gitops"
+  description = "Project name for resource naming"
+  validation {
+    condition     = can(regex("^[a-z0-9-]+$", var.project_name))
+    error_message = "Project name must contain only lowercase letters, numbers, and hyphens."
+  }
+}
 variable "region"       { type = string  default = "us-east-1" }
 variable "vpc_cidr"     { type = string  default = "10.0.0.0/16" }
 variable "az_count"     { type = number  default = 3 }

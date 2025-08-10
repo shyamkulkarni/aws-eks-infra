@@ -1,8 +1,8 @@
-clusterName: my-eks-cluster
+clusterName: eks-gitops
 serviceAccount:
   create: false
   name: aws-load-balancer-controller
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::<ACCOUNT_ID>:role/aws-lb-controller-irsa
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID_PLACEHOLDER:role/eks-gitops-irsa-alb
 region: us-east-1
-vpcId: vpc-xxxxxxxx
+vpcId: VPC_ID_PLACEHOLDER
