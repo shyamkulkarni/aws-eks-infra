@@ -1,1 +1,0 @@
-# Terraform version and provider requirements moved to main.tf

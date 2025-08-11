@@ -1,6 +1,0 @@
-backend:
-  type: cloudwatch
-  cloudwatch:
-    region: us-east-1
-    logGroupName: /eks/cluster
-    autoCreateGroup: true

@@ -1,5 +1,0 @@
-grafana:
-  adminPassword: admin
-prometheus:
-  prometheusSpec:
-    serviceMonitorSelectorNilUsesHelmValues: false
