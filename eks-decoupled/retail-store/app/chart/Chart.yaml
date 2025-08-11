@@ -20,7 +20,4 @@ dependencies:
     alias: orders
     version: 1.2.3
     repository: file://../../orders/chart
-  - name: retail-store-sample-ui-chart
-    alias: ui
-    version: 1.2.3
-    repository: file://../../ui/chart
+  # UI removed - now hosted on AWS Amplify
