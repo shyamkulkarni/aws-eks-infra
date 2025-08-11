@@ -3,6 +3,7 @@ import axios from 'axios';
 import './App.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+const ASSETS_URL = process.env.REACT_APP_ASSETS_URL || '';
 
 function App() {
   const [products, setProducts] = useState([]);
@@ -52,7 +53,7 @@ function App() {
         {products.length > 0 ? (
           products.map((product) => (
             <div key={product.id} className="product-card">
-              <img src={product.imageUrl || '/placeholder.jpg'} alt={product.name} />
+              <img src={product.imageUrl ? `${ASSETS_URL}${product.imageUrl}` : `${ASSETS_URL}/images/placeholder.jpg`} alt={product.name} />
               <h3>{product.name}</h3>
               <p className="price">${product.price}</p>
               <button onClick={() => addToCart(product)}>Add to Cart</button>

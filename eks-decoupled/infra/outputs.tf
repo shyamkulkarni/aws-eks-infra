@@ -9,3 +9,6 @@ output "account_id" { value = data.aws_caller_identity.current.account_id }
 output "region" { value = data.aws_region.current.name }
 output "alb_dns_name" { value = aws_lb.retail_api.dns_name }
 output "amplify_app_id" { value = aws_amplify_app.retail_frontend.id }
+output "amplify_url" { value = "https://main.${aws_amplify_app.retail_frontend.id}.amplifyapp.com" }
+output "s3_bucket_name" { value = aws_s3_bucket.static_assets.bucket }
+output "cloudfront_url" { value = "https://${aws_cloudfront_distribution.static_assets.domain_name}" }
