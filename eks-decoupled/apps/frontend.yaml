@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-content
+  namespace: shop
+data:
+  index.html: |
+    <!doctype html>
+    <html>
+    <head>
+      <title>Shop</title>
+    </head>
+    <body>
+      <h1>Shop Frontend</h1>
+      <button onclick="load()">Load Items</button>
+      <pre id="out"></pre>
+      <script>
+        async function load(){
+          try {
+            const res = await fetch('/api/items');
+            const data = await res.json();
+            document.getElementById('out').textContent =
+              JSON.stringify(data, null, 2);
+          } catch (error) {
+            document.getElementById('out').textContent = 'Error: ' + error.message;
+          }
+        }
+      </script>
+    </body>
+    </html>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: shop
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: web
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: web-content
+          mountPath: /usr/share/nginx/html
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d
+      volumes:
+      - name: web-content
+        configMap:
+          name: web-content
+      - name: nginx-config
+        configMap:
+          name: nginx-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: shop
+spec:
+  selector:
+    app: web
+  ports:
+  - port: 80
+    targetPort: 80

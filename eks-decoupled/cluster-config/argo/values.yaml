@@ -1,0 +1,44 @@
+global:
+  image:
+    tag: v2.11.0                 # Argo CD version (matches Helm chart defaults unless overridden)
+
+server:
+  extraArgs:
+    - --insecure                 # Disable built-in TLS (lab only; use ingress + TLS in prod)
+  service:
+    type: LoadBalancer           # Expose Argo CD UI via AWS ELB
+  ingress:
+    enabled: false               # If you prefer Ingress, set this to true and configure hosts/TLS
+  metrics:
+    enabled: true                 # Enable /metrics endpoint
+
+configs:
+  params:
+    server.insecure: "true"       # Same as --insecure flag
+  cm:
+    accounts.admin: apiKey        # Allow API tokens for 'admin'
+    kustomize.buildOptions: --enable-helm
+  rbac:
+    create: true
+    policy.csv: |
+      g, system:authenticated, role:admin  # Everyone authenticated is admin (lab only, lock down in prod)
+
+controller:
+  replicas: 1
+repoServer:
+  replicas: 1
+
+dex:
+  enabled: false                  # Disable SSO/OIDC (lab only; enable in prod)
+
+redis:
+  enabled: true                   # Required for Argo CD caching/performance
+
+# Optional resource requests/limits
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

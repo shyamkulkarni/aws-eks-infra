@@ -1,0 +1,11 @@
+output "cluster_name" { value = aws_eks_cluster.this.name }
+output "cluster_endpoint" { value = aws_eks_cluster.this.endpoint }
+output "oidc_provider_arn" { value = aws_iam_openid_connect_provider.eks.arn }
+output "public_subnet_ids" { value = values(aws_subnet.public)[*].id }
+output "private_subnet_ids" { value = values(aws_subnet.private)[*].id }
+# output "route53_zone_id" { value = data.aws_route53_zone.primary.zone_id }
+output "vpc_id" { value = aws_vpc.this.id }
+output "account_id" { value = data.aws_caller_identity.current.account_id }
+output "region" { value = data.aws_region.current.name }
+output "alb_dns_name" { value = aws_lb.retail_api.dns_name }
+output "amplify_app_id" { value = aws_amplify_app.retail_frontend.id }
